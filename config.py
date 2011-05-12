@@ -1,0 +1,5 @@
+db_type = 'mysql'
+db_host = 'localhost'
+db_name = 'mypydns2'
+db_user = 'mypydns'
+db_pass = 'mypydns'
