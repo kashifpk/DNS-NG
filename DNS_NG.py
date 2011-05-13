@@ -7,10 +7,17 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import db_code
 from db_model import DNSRequest, ClientHost, Redirect
+from redirect_manager import RedirectManager
 
 
 class MyDNSServerFactory(DNSServerFactory):
     dnsDB = None
+    RM = None # RedirectManager
+    
+    def __init__(self, authorities=None, caches=None, clients=None, verbose=0):
+        self.RM = RedirectManager()
+        DNSServerFactory.__init__(self, authorities=authorities, caches=caches, clients=clients, verbose=verbose)
+    
     
     def sendReply(self, protocol, message, address):
         
@@ -55,21 +62,28 @@ class MyDNSServerFactory(DNSServerFactory):
         if address is None:
             protocol.writeMessage(message)
         else:
-            if 'yahoo.com' == message.queries[0].name.name and 'A' == dns.QUERY_TYPES[message.queries[0].type]:
+            #print host, message.queries[0].name.name, dns.QUERY_TYPES[message.queries[0].type]
+            redirect_ip = self.RM.get_redirect_ip(host, message.queries[0].name.name, dns.QUERY_TYPES[message.queries[0].type])
+            #print redirect_ip
+            
+            if redirect_ip:
                 print("Applying redirection .... ")
+                
                 #create a dummy record for testing
-                rec = dns.Record_A('192.168.1.2', 300)
+                rec = dns.Record_A(redirect_ip, 5)
+                #print(rec)
                 for a in message.answers:
-                    a.payload = rec
+                    #print repr(a)
+                    if a.type == message.queries[0].type:
+                        a.payload = rec
                 
-                #protocol.writeMessage('192.168.1.2', address)
-                
-                protocol.writeMessage(message, address)
-            else:
-                protocol.writeMessage(message, address)
+                #print(message.answers)
+            
+            protocol.writeMessage(message, address)
         
         
         
+
 
 if '__main__' == __name__:
     
