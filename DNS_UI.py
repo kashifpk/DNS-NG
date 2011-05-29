@@ -16,6 +16,9 @@ class DnsUI(QtGui.QDialog, Ui_dlgDNS):
         self.setupUi(self)
         self.setLayout(self.verticalLayout)
         
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(1000)
+        
         #Signal handler connections
         self.connect(self.cmdClose, QtCore.SIGNAL("clicked()"), QtGui.qApp, QtCore.SLOT("quit()"))
         
@@ -31,13 +34,51 @@ class DnsUI(QtGui.QDialog, Ui_dlgDNS):
         self.connect(self.cmdSave, QtCore.SIGNAL("clicked()"), self.saveRecords)
         self.connect(self.cmdDelete, QtCore.SIGNAL("clicked()"), self.deleteRecord)
         
+        self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.getDNSRequests)
+        
+        self.objDB = get_db_session()
+        
+        
         self.txtDNSRequests.setText("Incoming DNS Queries")
+        self.lastRequestID = self.getLastRequestID()
         
         # Check server status and update user interface accordingly
         self.updateServerStatusUI()
         
-        self.objDB = get_db_session()
+        
+        if '' != self.serverPID:
+            self.timer.start()
+        
+        
         self.reloadRedirects()
+    
+    def getLastRequestID(self):
+        "Returns the last req_id from the DNS requests table"
+        
+        
+        q = self.objDB.query(DNSRequest).order_by(DNSRequest.req_id.desc()).first()
+        if None != q:
+            return q.req_id
+        else:
+            return None
+    
+    def getDNSRequests(self):
+        "Fetch incoming DNS requests from the DB and display them in txtDNSRequests"
+        
+        if self.serverPID is None:
+            return
+        
+        q = self.objDB.query(DNSRequest)
+        if self.lastRequestID:
+            
+            q=self.objDB.query(DNSRequest).filter('req_id>%s' % str(self.lastRequestID))
+        
+        
+        
+        for R in q:
+            s = "[%s] Query %s [%s] from %s" % (str(R.request_time), R.request_query, R.query_type, R.host.host_ip)
+            self.txtDNSRequests.append(s)
+            self.lastRequestID = R.req_id
     
     def addRecord(self):
         "Add a row to the redirects table so user can enter data into its fields"
@@ -156,6 +197,11 @@ class DnsUI(QtGui.QDialog, Ui_dlgDNS):
     def toggleRequestsView(self):
         "turns DNS requests viewing on or off"
         self.txtDNSRequests.setVisible(self.rdoOn.isChecked())
+        
+        if self.rdoOn.isChecked():
+            self.timer.start()
+        else:
+            self.timer.stop()
         
     
     def closeEvent(self, event):
