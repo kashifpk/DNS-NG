@@ -15,6 +15,7 @@ def setup_db():
 def get_db_session():
     "Returns database session object"
     engine = create_engine("%s://%s:%s@%s/%s" % (db_type, db_user, db_pass, db_host, db_name))
-    Session = scoped_session(sessionmaker(autocommit=True, autoflush=True, bind=engine))
+    #Session = scoped_session(sessionmaker(autocommit=True, autoflush=True, bind=engine))
+    Session = scoped_session(sessionmaker(bind=engine))
     
     return Session()

@@ -4,7 +4,10 @@ from DNSNG_UI import Ui_dlgDNS
 from db_model import Redirect, ClientHost, DNSRequest
 from db_code import get_db_session
 
+from subprocess import check_output, call, CalledProcessError
+
 import sys
+import time
 
 class DnsUI(QtGui.QDialog, Ui_dlgDNS):
     
@@ -15,10 +18,145 @@ class DnsUI(QtGui.QDialog, Ui_dlgDNS):
         
         #Signal handler connections
         self.connect(self.cmdClose, QtCore.SIGNAL("clicked()"), QtGui.qApp, QtCore.SLOT("quit()"))
+        
         self.connect(self.cmdRefresh, QtCore.SIGNAL("clicked()"), self.reloadRedirects)
+        self.connect(self.cmdRefresh, QtCore.SIGNAL("clicked()"), self.updateServerStatusUI)
+        
+        self.connect(self.cmdToggleServer, QtCore.SIGNAL("clicked()"), self.toggleServerStatus)
+        
+        self.connect(self.rdoOn, QtCore.SIGNAL("clicked()"), self.toggleRequestsView)
+        self.connect(self.rdoOff, QtCore.SIGNAL("clicked()"), self.toggleRequestsView)
+        
+        self.connect(self.cmdAdd, QtCore.SIGNAL("clicked()"), self.addRecord)
+        self.connect(self.cmdSave, QtCore.SIGNAL("clicked()"), self.saveRecords)
+        self.connect(self.cmdDelete, QtCore.SIGNAL("clicked()"), self.deleteRecord)
+        
+        self.txtDNSRequests.setText("Incoming DNS Queries")
+        
+        # Check server status and update user interface accordingly
+        self.updateServerStatusUI()
         
         self.objDB = get_db_session()
         self.reloadRedirects()
+    
+    def addRecord(self):
+        "Add a row to the redirects table so user can enter data into its fields"
+        r_num = self.tblRedirects.rowCount()
+        self.tblRedirects.insertRow(r_num)
+        
+        item = QtGui.QTableWidgetItem('')
+        item.setFlags(Qt.ItemIsEnabled|Qt.ItemIsSelectable)
+        
+        self.tblRedirects.setItem(r_num, 0, item)
+        self.tblRedirects.setItem(r_num, 1, QtGui.QTableWidgetItem(''))
+        self.tblRedirects.setItem(r_num, 2, QtGui.QTableWidgetItem(''))
+        self.tblRedirects.setItem(r_num, 3, QtGui.QTableWidgetItem(''))
+        self.tblRedirects.setItem(r_num, 4, QtGui.QTableWidgetItem(''))
+        self.tblRedirects.setItem(r_num, 5, QtGui.QTableWidgetItem(''))
+        
+    
+    def saveRecords(self):
+        "Save records back to the DB"
+        
+        for r_num in range(0, self.tblRedirects.rowCount()):
+            
+            rule_id = str(self.tblRedirects.item(r_num, 0).text()).strip()
+            
+            if '' != rule_id:
+                #existing record, update.
+                R = self.objDB.query(Redirect).filter_by(rule_id=int(rule_id)).one()
+                
+            else:
+                #new record, add.
+                R = Redirect('', '', '', '')
+            
+            R.redirect_ip = self.tblRedirects.item(r_num, 1).text()
+            R.client_host_specs = self.tblRedirects.item(r_num, 2).text()
+            R.query_domain = self.tblRedirects.item(r_num, 3).text()
+            R.query_type = self.tblRedirects.item(r_num, 4).text()
+            if 'true' == str(self.tblRedirects.item(r_num, 5).text()).strip().lower():
+                R.enabled = True
+            else:
+                R.enabled = False
+            
+            if '' == rule_id:
+                print("Adding record %s" % str(R))
+                self.objDB.add(R)
+                
+            
+            self.objDB.commit()
+        
+        
+        self.reloadRedirects()
+    
+    def deleteRecord(self):
+        "Delete currently selected record"
+        r_num = self.tblRedirects.currentRow()
+        if None != r_num:
+            rule_id = str(self.tblRedirects.item(r_num, 0).text()).strip()
+            if '' != rule_id:
+                R = self.objDB.query(Redirect).filter_by(rule_id=int(rule_id)).one()
+                self.objDB.delete(R)
+                self.objDB.commit()
+            
+            
+            self.tblRedirects.removeRow(r_num)
+            
+    def updateServerPID(self):
+        "Returns server PID or empty string if server is not running"
+        server_pid = ""
+        
+        try:
+            server_pid = check_output(["pidof", "DNS_NG"]).strip()
+        except CalledProcessError:
+            server_pid = ""
+        
+        self.serverPID = server_pid
+    
+    def updateServerStatusUI(self):
+        "Update controls related to server status"
+        
+        self.updateServerPID()
+        
+        if "" != self.serverPID:
+            self.lblServerStatus.setText("RUNNING")
+            self.lblServerStatus.setStyleSheet("color: green; font-weight: bold; font-size: 14pt;")
+            self.lblServerPID.setText("(PID: %s)" % self.serverPID)
+            self.cmdToggleServer.setText("Stop Server")
+            
+        else:
+            self.lblServerStatus.setText("NOT RUNNING")
+            self.lblServerStatus.setStyleSheet("color: red; font-weight: bold; font-size: 14pt;")
+            self.lblServerPID.setText("     ")
+            self.cmdToggleServer.setText("Start Server")
+    
+    
+    def toggleServerStatus(self):
+        "Start or stop the server"
+        
+        if "" == self.serverPID:
+            # start server
+            try:
+                ret = call(["python", "DNS_NG.py", "--daemon"])
+                self.updateServerStatusUI()
+                
+            except CalledProcessError:
+                QtGui.QMessageBox.critical(self, "Error", "Error starting server")
+            
+        else:
+            #stop server
+            try:
+                ret = call(["killall", "DNS_NG"])
+                time.sleep(1)
+                self.updateServerStatusUI()
+            except CalledProcessError:
+                QtGui.QMessageBox.critical(self, "Error", "Error stoping server")
+            
+    
+    def toggleRequestsView(self):
+        "turns DNS requests viewing on or off"
+        self.txtDNSRequests.setVisible(self.rdoOn.isChecked())
+        
     
     def closeEvent(self, event):
         reply = QtGui.QMessageBox.question(self, "Really Quit?", "Are you sure you want to quit?",

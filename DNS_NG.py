@@ -86,10 +86,19 @@ class MyDNSServerFactory(DNSServerFactory):
 
 
 if '__main__' == __name__:
+    import os
     
-    if 'setup_db' in sys.argv:
+    import procname
+    procname.setprocname('DNS_NG')
+    
+    if '--setup_db' in sys.argv:
         db_code.setup_db()
         print "Database tables created!"
+    
+    if '--daemon' in sys.argv:
+        from createDaemon import createDaemon
+        retCode = createDaemon()
+        
     
     db_session = db_code.get_db_session()
     #resolver = client.Resolver(servers=[('192.168.1.254', 53)])
