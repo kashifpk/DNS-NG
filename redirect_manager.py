@@ -33,7 +33,7 @@ class RedirectManager():
     
     def get_redirect_ip(self, client, query_domain, query_type):
         "Given a requesting client and a the requested domain, returns either None or the redirect IP for the domain (if present)"
-        
+        self.load_redirects()
         for R in self.redirects_table:
             if R['client_re'].match(client) and R['domain_re'].match(query_domain) and \
                query_type==R['query_type'] and R['enabled']:
