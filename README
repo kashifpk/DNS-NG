@@ -1,0 +1,42 @@
+DNS-NG
+
+DNS-NG is a simplified DNS server that uses a backend DNS server to store DNS records (redirects). For requests that don't have matching records in the DB, it contacts another DNS server to fetch their result.
+
+This script also includes a Qt4 User Interface for managing the DNS server. The DNS server itself is based on the twisted framework and uses sqlalchmey for database ORM. Requirements for the script are:
+
+    * python
+    * python-qt4
+    * twisted-python
+    * sqlalchemy
+
+
+Installation and Usage Instructions
+
+    1. Unzip or checkout the code into a folder. Install python and python setuptools if not already present.
+    2. Install twisted and sqlalchemy using easy_install. For example:
+
+        easy_install sqlalchemy
+        easy_install twisted
+        
+    3. Install apropriate database driver for python if not present. For example, if you want to use MySQL as the backend db, you need to install the mysql-python package.
+
+        easy_install mysql-python
+    
+    4. Edit the config.py file to update your database type and access credentials
+    
+    5. Create tables in the database using:
+
+        python DNS_NG.py --setup_db
+    
+    6. Now you can run the DNS server using either
+
+        python DNS_NG.py
+
+            or
+
+        python DNS_NG.py --daemon (For running as a daemon/service)
+    
+    7. To run the Qt4 User Interface, run
+
+        python DNS_UI.py
+
