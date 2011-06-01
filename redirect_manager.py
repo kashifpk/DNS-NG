@@ -20,10 +20,12 @@ class RedirectManager():
     
     def load_redirects(self):
         "Load all redirects from database"
-        #self.objDB.flush()
-        #self.objDB.commit()
+        
         redirects = self.objDB.query(Redirect)
+        
+        #clear previous entries
         self.redirects_table = []
+        
         for R in redirects:
             self.redirects_table.append({'redirect_ip': R.redirect_ip, 'query_type': R.query_type,
                                          'client_host_specs': R.client_host_specs, 'enabled': R.enabled,
