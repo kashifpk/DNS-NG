@@ -20,8 +20,10 @@ class RedirectManager():
     
     def load_redirects(self):
         "Load all redirects from database"
-        
+        #self.objDB.flush()
+        #self.objDB.commit()
         redirects = self.objDB.query(Redirect)
+        self.redirects_table = []
         for R in redirects:
             self.redirects_table.append({'redirect_ip': R.redirect_ip, 'query_type': R.query_type,
                                          'client_host_specs': R.client_host_specs, 'enabled': R.enabled,
@@ -35,8 +37,10 @@ class RedirectManager():
         "Given a requesting client and a the requested domain, returns either None or the redirect IP for the domain (if present)"
         self.load_redirects()
         for R in self.redirects_table:
+            
             if R['client_re'].match(client) and R['domain_re'].match(query_domain) and \
                query_type==R['query_type'] and R['enabled']:
+                print("enabled: %s" % str(R['enabled']))
                 return R['redirect_ip']
         
         return None
