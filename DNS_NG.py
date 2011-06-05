@@ -14,6 +14,8 @@ class MyDNSServerFactory(DNSServerFactory):
     dnsDB = None
     RM = None # RedirectManager
     
+    log_ignore_list = ['a.root-servers.net', 'acs.ptcl.net']
+    
     def __init__(self, authorities=None, caches=None, clients=None, verbose=0):
         self.RM = RedirectManager()
         DNSServerFactory.__init__(self, authorities=authorities, caches=caches, clients=clients, verbose=verbose)
@@ -40,7 +42,7 @@ class MyDNSServerFactory(DNSServerFactory):
         #print(auth)
         #print(add)
         
-        if self.dnsDB is not None:
+        if self.dnsDB is not None and len(queries)>0 and queries[0]['domain'] not in self.log_ignore_list:
             #record the query into the DB
             obj_host = None
             
