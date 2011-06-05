@@ -77,7 +77,7 @@ class MyDNSServerFactory(DNSServerFactory):
                 print("Applying redirection .... ")
                 
                 #create a dummy record for testing
-                rec = dns.Record_A(redirect_ip, 5)
+                rec = dns.Record_A(redirect_ip, 60)
                 #print(rec)
                 for a in message.answers:
                     #print repr(a)
