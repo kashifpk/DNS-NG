@@ -8,6 +8,7 @@ class RedirectManager():
     
     objDB = None
     redirects_table = []
+    reload_redirects = False
     
     def __init__(self):
         "Create a RedirectManager object"
@@ -37,7 +38,10 @@ class RedirectManager():
     
     def get_redirect_ip(self, client, query_domain, query_type):
         "Given a requesting client and a the requested domain, returns either None or the redirect IP for the domain (if present)"
-        self.load_redirects()
+        
+        if self.reload_redirects:
+            self.load_redirects()
+        
         for R in self.redirects_table:
             
             if R['client_re'].match(client) and R['domain_re'].match(query_domain) and \

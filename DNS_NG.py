@@ -9,6 +9,7 @@ import db_code
 from db_model import DNSRequest, ClientHost, Redirect
 from redirect_manager import RedirectManager
 
+reload_redirects = False
 
 class MyDNSServerFactory(DNSServerFactory):
     dnsDB = None
@@ -17,7 +18,11 @@ class MyDNSServerFactory(DNSServerFactory):
     log_ignore_list = ['a.root-servers.net', 'acs.ptcl.net']
     
     def __init__(self, authorities=None, caches=None, clients=None, verbose=0):
+        global reload_redirects
+        
         self.RM = RedirectManager()
+        self.RM.reload_redirects = reload_redirects
+        
         DNSServerFactory.__init__(self, authorities=authorities, caches=caches, clients=clients, verbose=verbose)
     
     
@@ -101,6 +106,8 @@ if '__main__' == __name__:
         from createDaemon import createDaemon
         retCode = createDaemon()
         
+    if '--reload_redirects' in sys.argv:
+        reload_redirects = True
     
     db_session = db_code.get_db_session()
     #resolver = client.Resolver(servers=[('192.168.1.254', 53)])
