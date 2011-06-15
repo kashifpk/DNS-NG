@@ -10,6 +10,7 @@ from db_model import DNSRequest, ClientHost, Redirect
 from redirect_manager import RedirectManager
 
 reload_redirects = False
+no_logging = False
 
 class MyDNSServerFactory(DNSServerFactory):
     dnsDB = None
@@ -22,6 +23,7 @@ class MyDNSServerFactory(DNSServerFactory):
         
         self.RM = RedirectManager()
         self.RM.reload_redirects = reload_redirects
+        self.no_logging = no_logging
         
         DNSServerFactory.__init__(self, authorities=authorities, caches=caches, clients=clients, verbose=verbose)
     
@@ -47,7 +49,8 @@ class MyDNSServerFactory(DNSServerFactory):
         #print(auth)
         #print(add)
         
-        if self.dnsDB is not None and len(queries)>0 and queries[0]['domain'] not in self.log_ignore_list:
+        if not self.no_logging and self.dnsDB is not None and \
+           len(queries)>0 and queries[0]['domain'] not in self.log_ignore_list:
             #record the query into the DB
             obj_host = None
             
@@ -108,6 +111,9 @@ if '__main__' == __name__:
         
     if '--reload_redirects' in sys.argv:
         reload_redirects = True
+    
+    if '--no-logging' in sys.argv:
+        no_logging = True
     
     db_session = db_code.get_db_session()
     #resolver = client.Resolver(servers=[('192.168.1.254', 53)])
