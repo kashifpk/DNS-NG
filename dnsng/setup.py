@@ -8,8 +8,7 @@ README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
-    'PyCK',
-    'pyramid',
+    'twisted',
     'SQLAlchemy',
     'transaction',
     'psycopg2'
@@ -33,22 +32,28 @@ setup(
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
         "Programming Language :: Python",
-        "Framework :: PyCK",
-        "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+        "Framework :: Twisted",
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Information Technology",
+        "Intended Audience :: System Administrators",
+        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "Operating System :: POSIX",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: Unix",
+        "Topic :: Internet :: Name Service (DNS)"
     ],
-    author='',
-    author_email='',
-    url='',
-    keywords='web PyCK framework pylons pyramid',
+    author='Kashif Iftikhar',
+    author_email='kashif@compulife.com.pk',
+    url='http://www.compulife.com.pk/dns_ng',
+    keywords='DNS Spoofing MITM MIM Man-in-Middle-Attack',
     packages=find_packages(),
     include_package_data=True,
-    zip_safe=False,
-    test_suite='compulife',
+    zip_safe=True,
     install_requires=requires,
+    data_files=[('/etc/dnsng/', ['dnsng.ini'])],
     entry_points="""\
-    [paste.app_factory]
-    main = compulife:main
     [console_scripts]
     compulife_populate = compulife.scripts.populate:main
     compulife_newapp = compulife.scripts.newapp:main
